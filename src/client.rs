@@ -4,6 +4,7 @@ mod response;
 use response::GistCreated;
 
 mod data;
+pub use data::FileMap;
 use data::Gist;
 
 /// Type alias to wrap a single Error from `reqwest`.
