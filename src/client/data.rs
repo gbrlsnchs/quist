@@ -4,12 +4,20 @@ use serde::Serialize;
 
 /// Represents a file to be uploaded to GitHub as part of a Gist.
 #[derive(Serialize)]
-pub struct File<'a> {
-	pub content: &'a str,
+pub struct File {
+	pub content: String,
+}
+
+impl Into<File> for &Vec<u8> {
+	fn into(self) -> File {
+		File {
+			content: String::from_utf8_lossy(self).to_string(),
+		}
+	}
 }
 
 /// Type for the list of files in a Gist.
-pub type FileMap<'a> = HashMap<&'a str, File<'a>>;
+pub type FileMap<'a> = HashMap<&'a str, File>;
 
 /// Gist object.
 #[derive(Serialize)]

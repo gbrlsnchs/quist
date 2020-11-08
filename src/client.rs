@@ -1,23 +1,18 @@
+pub mod auth;
+pub mod data;
+pub mod response;
+
+use self::auth::AuthMethod;
+use self::data::Gist;
+use self::response::{GistCreated, Response};
+use crate::utils;
 use reqwest::{Client as HttpClient, Error as HttpError};
 
-mod response;
-use response::GistCreated;
-
-mod data;
-pub use data::FileMap;
-use data::Gist;
-
 /// Type alias to wrap a single Error from `reqwest`.
-type Result<T> = std::result::Result<T, HttpError>;
-
-/// Representation of possible authentication methods for the GitHub API.
-pub enum AuthMethod<'a> {
-	/// Basic access authentication
-	BasicAuth { username: &'a str, token: &'a str },
-}
+type HttpResult<T> = Result<T, HttpError>;
 
 /// HTTP client for interacting with GitHub's API.
-struct Client<'a> {
+pub struct Client<'a> {
 	base_url: &'a str,
 	auth_method: AuthMethod<'a>,
 	http_client: HttpClient,
@@ -25,7 +20,7 @@ struct Client<'a> {
 
 impl<'a> Client<'a> {
 	/// Constructs a new client with a fixed base URL and authentication method.
-	fn new(base_url: &'a str, auth_method: AuthMethod<'a>) -> Client<'a> {
+	pub fn new(base_url: &'a str, auth_method: AuthMethod<'a>) -> Client<'a> {
 		Client {
 			base_url,
 			auth_method,
@@ -34,17 +29,18 @@ impl<'a> Client<'a> {
 	}
 
 	/// Creates a new Gist and returns its URL.
-	async fn create(&self, gist: &Gist<'a>) -> Result<GistCreated> {
+	pub async fn create(&self, gist: &Gist<'a>) -> HttpResult<Response<GistCreated>> {
 		let base_url = format!("{}/gists", self.base_url);
 		let mut request = self
 			.http_client
 			.post(&base_url)
 			.header("Accept", "application/vnd.github.v3+json")
+			.header("User-Agent", format!("quist/{}", utils::get_version()))
 			.json(&gist);
 
 		match self.auth_method {
 			AuthMethod::BasicAuth { username, token } => {
-				request = request.basic_auth(username, Some(token));
+				request = request.basic_auth(username, token.into());
 			}
 		}
 
@@ -55,19 +51,18 @@ impl<'a> Client<'a> {
 #[cfg(test)]
 mod tests {
 	use super::*;
-
+	use data::File;
 	use maplit::hashmap;
 	use pretty_assertions::assert_eq;
 	use serde_json::json;
 
-	use data::File;
-
 	#[tokio::test]
-	async fn test_create_gist() -> Result<()> {
+	async fn test_create_gist() -> HttpResult<()> {
 		let base_url = &mockito::server_url();
 		let mock = mockito::mock("POST", "/gists")
 			.match_header("Accept", "application/vnd.github.v3+json")
 			.match_header("Authorization", "Basic dXNlcm5hbWU6dG9rZW4=")
+			.match_header("User-Agent", &*format!("quist/{}", utils::get_version()))
 			.match_body(
 				&*json!({
 					"files": {
@@ -109,7 +104,7 @@ mod tests {
 			description: None,
 			files: hashmap! {
 				"test" => File{
-					content: "Hello World\n",
+					content: String::from("Hello World\n"),
 				},
 			},
 		};
@@ -118,9 +113,65 @@ mod tests {
 		mock.assert();
 		assert_eq!(
 			response,
-			GistCreated {
-				url: String::from("test://gist")
-			}
+			Response::Ok(GistCreated {
+				url: String::from("test://gist"),
+			}),
+		);
+
+		Ok(())
+	}
+
+	#[tokio::test]
+	async fn test_error_when_creating_gist() -> HttpResult<()> {
+		let base_url = &mockito::server_url();
+		let mock = mockito::mock("POST", "/gists")
+			.match_header("Accept", "application/vnd.github.v3+json")
+			.match_header("Authorization", "Basic dXNlcm5hbWU6dG9rZW4=")
+			.match_header("User-Agent", &*format!("quist/{}", utils::get_version()))
+			.match_body(
+				&*json!({
+					"files": {
+						"test": {
+							"content": "Hello World\n"
+						}
+					}
+				})
+				.to_string(),
+			)
+			.with_status(401)
+			.with_body(
+				json!({
+					"message": "needs auth",
+					"documentation_url":
+						"https://docs.github.com/rest/reference/gists#create-a-gist",
+				})
+				.to_string(),
+			)
+			.create();
+
+		let client = Client::new(
+			base_url,
+			AuthMethod::BasicAuth {
+				username: "username",
+				token: "token",
+			},
+		);
+		let gist = Gist {
+			description: None,
+			files: hashmap! {
+				"test" => File{
+					content: String::from("Hello World\n"),
+				},
+			},
+		};
+		let response = client.create(&gist).await?;
+
+		mock.assert();
+		assert_eq!(
+			response,
+			Response::Err {
+				message: String::from("needs auth"),
+			},
 		);
 
 		Ok(())
