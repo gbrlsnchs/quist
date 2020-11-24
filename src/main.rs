@@ -5,6 +5,7 @@ mod utils;
 use self::app::{App, Output};
 use clap::Clap;
 use std::io::{self, Result, Write};
+use tokio::signal;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -14,7 +15,14 @@ async fn main() -> Result<()> {
 		stderr: io::stderr(),
 	};
 
-	let result = app.run(&mut output).await;
+	let (tx, rx) = flume::bounded(1);
+	tokio::spawn(async move {
+		signal::ctrl_c().await.unwrap();
+
+		tx.send(())
+	});
+
+	let result = app.run(rx, &mut output).await;
 
 	if let Err(err) = result {
 		return writeln!(output.stderr, "{}: {}", utils::get_name(), err);

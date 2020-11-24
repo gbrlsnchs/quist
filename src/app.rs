@@ -4,6 +4,7 @@ use crate::client::response::Response;
 use crate::client::Client;
 use crate::utils;
 use clap::{Clap, ValueHint};
+use flume::Receiver;
 use futures::future;
 use std::error::Error;
 use std::io::Result as IoResult;
@@ -40,6 +41,7 @@ impl App {
 	/// Acts like an imperative shell and runs the application.
 	pub async fn run<Stdout: Write, Stderr: Write>(
 		mut self,
+		exit: Receiver<()>,
 		output: &mut Output<Stdout, Stderr>,
 	) -> Result<(), Box<dyn Error>> {
 		let Output {
@@ -64,16 +66,26 @@ impl App {
 		};
 
 		let response = client.create(&gist).await?;
+		let gist;
 
 		match response {
-			Response::Ok(gist) => {
+			Response::Ok(gist_created) => {
 				write!(stderr, "URL created: ")?;
-				writeln!(stdout, "{}", gist.url)?;
-
-				Ok(())
+				write!(stdout, "{}", gist_created.url)?;
+				gist = gist_created;
+				writeln!(stderr)?;
 			}
-			Response::Err { message } => Err(message.into()),
-		}
+			Response::Err { message } => return Err(message.into()),
+		};
+
+		writeln!(
+			stderr,
+			"Waiting for termination in order to delete the Gist..."
+		)?;
+		exit.recv_async().await?;
+		writeln!(stderr, "Gist {:?} successfully deleted! Bye.", gist.id)?;
+
+		Ok(())
 	}
 
 	async fn read_files(&self) -> IoResult<Vec<(&str, Vec<u8>)>> {
@@ -213,10 +225,13 @@ mod tests {
 			stderr: Vec::new(),
 		};
 
-		let result = app.run(&mut output).await;
+		let (tx, rx) = flume::bounded(1);
+		tx.try_send(()).unwrap();
+		let result = app.run(rx, &mut output).await;
 
 		post_gists_mock.assert();
 
 		assert!(result.is_ok());
+		assert_eq!(output.stdout, b"test://gist");
 	}
 }
