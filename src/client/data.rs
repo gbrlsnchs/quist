@@ -1,6 +1,5 @@
-use std::collections::HashMap;
-
-use serde::Serialize;
+use serde::{Serialize, Serializer};
+use std::collections::{BTreeMap, HashMap};
 
 /// Represents a file to be uploaded to GitHub as part of a Gist.
 #[derive(Serialize)]
@@ -26,5 +25,15 @@ pub struct Gist<'a> {
 	#[serde(skip_serializing_if = "Option::is_none")]
 	pub description: Option<&'a str>,
 	/// List of files to be uploaded in a Gist
+	#[serde(serialize_with = "ordered_map")]
 	pub files: FileMap<'a>,
+}
+
+fn ordered_map<'a, S>(value: &FileMap<'a>, serializer: S) -> Result<S::Ok, S::Error>
+where
+	S: Serializer,
+{
+	let ordered: BTreeMap<_, _> = value.iter().collect();
+
+	ordered.serialize(serializer)
 }
