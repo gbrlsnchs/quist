@@ -141,6 +141,7 @@ mod tests {
 		assert_eq!(
 			response,
 			Response::Ok(GistCreated {
+				id: String::from("aa5a315d61ae9438b18d"),
 				url: String::from("test://gist"),
 			}),
 		);

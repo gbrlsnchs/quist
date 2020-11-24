@@ -2,6 +2,7 @@ use serde::{self, Deserialize};
 
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct GistCreated {
+	pub id: String,
 	pub url: String,
 }
 
