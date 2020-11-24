@@ -4,7 +4,7 @@ pub mod response;
 
 use self::auth::AuthMethod;
 use self::data::Gist;
-use self::response::{GistCreated, Response};
+use self::response::{GistCreated, GistDeleted, Response};
 use crate::utils;
 use reqwest::{Client as HttpClient, Error as HttpError};
 
@@ -45,6 +45,33 @@ impl<'a> Client<'a> {
 		}
 
 		request.send().await?.json().await
+	}
+
+	/// Deletes an existing Gist.
+	pub async fn delete(&self, gist_id: &str) -> HttpResult<Response<GistDeleted>> {
+		let base_url = format!(
+			"{base_url}/gists/{gist_id}",
+			base_url = self.base_url,
+			gist_id = gist_id,
+		);
+		let mut request = self
+			.http_client
+			.delete(&base_url)
+			.header("Accept", "application/vnd.github.v3+json")
+			.header("User-Agent", format!("quist/{}", utils::get_version()));
+
+		match self.auth_method {
+			AuthMethod::BasicAuth { username, token } => {
+				request = request.basic_auth(username, token.into());
+			}
+		}
+
+		let response = request.send().await?;
+
+		match response.status().as_u16() {
+			204 | 304 => Ok(Response::Ok(())),
+			_ => response.json().await,
+		}
 	}
 }
 
@@ -165,6 +192,69 @@ mod tests {
 			},
 		};
 		let response = client.create(&gist).await?;
+
+		mock.assert();
+		assert_eq!(
+			response,
+			Response::Err {
+				message: String::from("needs auth"),
+			},
+		);
+
+		Ok(())
+	}
+
+	#[tokio::test]
+	async fn test_delete_gist() -> HttpResult<()> {
+		let base_url = &mockito::server_url();
+		let mock = mockito::mock("DELETE", "/gists/foo123")
+			.match_header("Accept", "application/vnd.github.v3+json")
+			.match_header("Authorization", "Basic dXNlcm5hbWU6dG9rZW4=")
+			.match_header("User-Agent", &*format!("quist/{}", utils::get_version()))
+			.with_status(204)
+			.create();
+
+		let client = Client::new(
+			base_url,
+			AuthMethod::BasicAuth {
+				username: "username",
+				token: "token",
+			},
+		);
+		let response = client.delete("foo123").await?;
+
+		mock.assert();
+		assert_eq!(response, Response::Ok(()));
+
+		Ok(())
+	}
+
+	#[tokio::test]
+	async fn test_delete_gist_error() -> HttpResult<()> {
+		let base_url = &mockito::server_url();
+		let mock = mockito::mock("DELETE", "/gists/foo123")
+			.match_header("Accept", "application/vnd.github.v3+json")
+			.match_header("Authorization", "Basic dXNlcm5hbWU6dG9rZW4=")
+			.match_header("User-Agent", &*format!("quist/{}", utils::get_version()))
+			.with_status(403)
+			.with_body(
+				json!({
+					"message": "needs auth",
+					"documentation_url":
+						"https://docs.github.com/rest/reference/gists#delete-a-gist",
+				})
+				.to_string(),
+			)
+			.create();
+
+		let client = Client::new(
+			base_url,
+			AuthMethod::BasicAuth {
+				username: "username",
+				token: "token",
+			},
+		);
+		let response = client.delete("foo123").await?;
 
 		mock.assert();
 		assert_eq!(
