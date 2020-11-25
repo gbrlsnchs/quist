@@ -4,12 +4,12 @@ use crate::client::response::Response;
 use crate::client::Client;
 use crate::utils;
 use clap::{Clap, ValueHint};
-use flume::Receiver;
 use futures::future;
 use std::error::Error;
 use std::io::Result as IoResult;
 use std::io::Write;
 use std::path::PathBuf;
+use tokio::sync::mpsc::Receiver;
 
 pub struct Output<Stdout: Write, Stderr: Write> {
 	pub stdout: Stdout,
@@ -41,7 +41,7 @@ impl App {
 	/// Acts like an imperative shell and runs the application.
 	pub async fn run<Stdout: Write, Stderr: Write>(
 		mut self,
-		exit: Receiver<()>,
+		mut exit: Receiver<()>,
 		output: &mut Output<Stdout, Stderr>,
 	) -> Result<(), Box<dyn Error>> {
 		let Output {
@@ -81,7 +81,7 @@ impl App {
 			"Waiting for termination in order to delete the Gist..."
 		)?;
 
-		exit.recv_async().await?;
+		exit.recv().await;
 		let response = client.delete(&gist.id).await?;
 
 		match response {
@@ -137,6 +137,7 @@ mod tests {
 	use pretty_assertions::assert_eq;
 	use serde_json::json;
 	use std::path::PathBuf;
+	use tokio::sync::mpsc;
 
 	#[tokio::test]
 	async fn test_files_are_correctly_read() -> IoResult<()> {
@@ -239,7 +240,7 @@ mod tests {
 			stderr: Vec::new(),
 		};
 
-		let (tx, rx) = flume::bounded(1);
+		let (mut tx, rx) = mpsc::channel(1);
 		tx.try_send(()).unwrap();
 		let result = app.run(rx, &mut output).await;
 
