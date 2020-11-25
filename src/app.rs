@@ -70,7 +70,7 @@ impl App {
 
 		match response {
 			Response::Ok(gist_created) => {
-				writeln!(stdout, "URL created: {}", gist_created.url)?;
+				writeln!(stdout, "Gist created: {}", gist_created.url)?;
 				gist = gist_created;
 			}
 			Response::Err { message } => return Err(message.into()),
@@ -247,6 +247,6 @@ mod tests {
 		delete_gists_mock.assert();
 
 		assert!(result.is_ok());
-		assert_eq!(output.stdout, b"URL created: test://gist\n");
+		assert_eq!(output.stdout, b"Gist created: test://gist\n");
 	}
 }
