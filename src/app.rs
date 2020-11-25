@@ -70,10 +70,8 @@ impl App {
 
 		match response {
 			Response::Ok(gist_created) => {
-				write!(stderr, "URL created: ")?;
-				write!(stdout, "{}", gist_created.url)?;
+				writeln!(stdout, "URL created: {}", gist_created.url)?;
 				gist = gist_created;
-				writeln!(stderr)?;
 			}
 			Response::Err { message } => return Err(message.into()),
 		};
@@ -82,8 +80,16 @@ impl App {
 			stderr,
 			"Waiting for termination in order to delete the Gist..."
 		)?;
+
 		exit.recv_async().await?;
-		writeln!(stderr, "Gist {:?} successfully deleted! Bye.", gist.id)?;
+		let response = client.delete(&gist.id).await?;
+
+		match response {
+			Response::Ok(_) => {
+				writeln!(stderr, "\nGist {:?} successfully deleted! Bye.", gist.id)?;
+			}
+			Response::Err { message } => return Err(message.into()),
+		}
 
 		Ok(())
 	}
@@ -195,6 +201,7 @@ mod tests {
 				})
 				.to_string(),
 			)
+			.with_status(201)
 			.with_body(
 				json!({
 					"url": "test://gist",
@@ -215,6 +222,13 @@ mod tests {
 			)
 			.create();
 
+		let delete_gists_mock = mockito::mock("DELETE", "/gists/aa5a315d61ae9438b18d")
+			.match_header("Accept", "application/vnd.github.v3+json")
+			.match_header("Authorization", "Basic dXNlcm5hbWU6dG9rZW4=")
+			.match_header("User-Agent", &*format!("quist/{}", utils::get_version()))
+			.with_status(204)
+			.create();
+
 		let app = App {
 			basic_auth: String::from("username:token"),
 			files: vec![PathBuf::from("test/foo.txt"), PathBuf::from("test/bar.txt")],
@@ -230,8 +244,9 @@ mod tests {
 		let result = app.run(rx, &mut output).await;
 
 		post_gists_mock.assert();
+		delete_gists_mock.assert();
 
 		assert!(result.is_ok());
-		assert_eq!(output.stdout, b"test://gist");
+		assert_eq!(output.stdout, b"URL created: test://gist\n");
 	}
 }
