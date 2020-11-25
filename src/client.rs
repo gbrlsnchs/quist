@@ -100,6 +100,7 @@ mod tests {
 				})
 				.to_string(),
 			)
+			.with_status(201)
 			.with_body(
 				json!({
 					"url": "test://gist",
