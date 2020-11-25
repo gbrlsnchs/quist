@@ -103,14 +103,14 @@ mod tests {
 			.with_status(201)
 			.with_body(
 				json!({
-					"url": "test://gist",
+					"url": "https://api.github.com/gists/aa5a315d61ae9438b18d",
 					"forks_url": "https://api.github.com/gists/aa5a315d61ae9438b18d/forks",
 					"commits_url": "https://api.github.com/gists/aa5a315d61ae9438b18d/commits",
 					"id": "aa5a315d61ae9438b18d",
 					"node_id": "MDQ6R2lzdGFhNWEzMTVkNjFhZTk0MzhiMThk",
 					"git_pull_url": "https://gist.github.com/aa5a315d61ae9438b18d.git",
 					"git_push_url": "https://gist.github.com/aa5a315d61ae9438b18d.git",
-					"html_url": "https://gist.github.com/aa5a315d61ae9438b18d",
+					"html_url": "test://gist",
 					"created_at": "2010-04-14T02:15:15Z",
 					"updated_at": "2011-06-20T11:34:15Z",
 					"description": "Hello World Examples",
