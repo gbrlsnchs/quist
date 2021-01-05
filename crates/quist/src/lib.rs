@@ -2,7 +2,6 @@ use crate::client::auth::AuthMethod;
 use crate::client::data::{FileMap, Gist};
 use crate::client::response::Response;
 use crate::client::Client;
-use crate::utils;
 use clap::{Clap, ValueHint};
 use futures::future;
 use std::error::Error;
@@ -10,6 +9,9 @@ use std::io::Result as IoResult;
 use std::io::Write;
 use std::path::PathBuf;
 use tokio::sync::mpsc::Receiver;
+
+mod client;
+pub mod utils;
 
 pub struct Output<Stdout: Write, Stderr: Write> {
 	pub stdout: Stdout,

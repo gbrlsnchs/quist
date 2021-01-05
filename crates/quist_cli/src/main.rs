@@ -1,8 +1,4 @@
-mod app;
-mod client;
-mod utils;
-
-use self::app::{App, Output};
+use app::{utils, App, Output};
 use clap::Clap;
 use std::io::{self, Error as IoError, ErrorKind as IoErrorKind, Result as IoResult, Write};
 use tokio::signal;

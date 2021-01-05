@@ -121,6 +121,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "clap_generate"
+version = "3.0.0-beta.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "adf420f8b687b628d2915ccfd43a660c437a170432e3fbcb66944e8717a0d68f"
+dependencies = [
+ "clap",
+]
+
+[[package]]
 name = "colored"
 version = "1.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -883,10 +892,9 @@ dependencies = [
 
 [[package]]
 name = "quist"
-version = "0.1.0"
+version = "0.0.0"
 dependencies = [
  "clap",
- "ctrlc",
  "futures",
  "maplit",
  "mockito",
@@ -894,6 +902,18 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
+ "tokio",
+]
+
+[[package]]
+name = "quist_cli"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "clap_generate",
+ "ctrlc",
+ "futures",
+ "quist",
  "tokio",
 ]
 
