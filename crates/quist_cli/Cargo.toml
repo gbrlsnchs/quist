@@ -7,12 +7,11 @@ edition = "2018"
 
 [dependencies]
 quist = { path = "../quist" }
-clap = "3.0.0-beta.2"
 ctrlc = { version = "3.1", features = ["termination"] }
 futures = "0.3"
+structopt = "0.3"
 tokio = { version = "0.2", features = ["fs", "macros", "signal", "sync"] }
 
 [build-dependencies]
-clap = "3.0.0-beta.2"
-clap_generate = "3.0.0-beta.2"
+structopt = "0.3"
 quist = { path = "../quist" }

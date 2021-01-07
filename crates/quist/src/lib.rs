@@ -2,12 +2,12 @@ use crate::client::auth::AuthMethod;
 use crate::client::data::{FileMap, Gist};
 use crate::client::response::Response;
 use crate::client::Client;
-use clap::{Clap, ValueHint};
 use futures::future;
 use std::error::Error;
 use std::io::Result as IoResult;
 use std::io::Write;
 use std::path::PathBuf;
+use structopt::StructOpt;
 use tokio::sync::mpsc::Receiver;
 
 mod client;
@@ -19,23 +19,18 @@ pub struct Output<Stdout: Write, Stderr: Write> {
 }
 
 /// A CLI to create short-lived Gists.
-#[derive(Clap, Debug, Default)]
-#[clap(
+#[derive(Debug, Default, StructOpt)]
+#[structopt(
 	name = utils::get_name(),
 	version = utils::get_version(),
 	author = env!("CARGO_PKG_AUTHORS"),
 )]
 pub struct App {
 	/// Credentials in basic access authentication format
-	#[clap(long)]
+	#[structopt(long)]
 	basic_auth: String,
 	/// List of files to be included in the Gist
-	#[clap(
-		name = "FILE",
-		required = true,
-		parse(from_os_str),
-		value_hint = ValueHint::AnyPath,
-	)]
+	#[structopt(name = "FILE", required = true, parse(from_os_str))]
 	files: Vec<PathBuf>,
 }
 

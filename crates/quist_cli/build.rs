@@ -1,7 +1,7 @@
-use clap::IntoApp;
-use clap_generate::generators::{Bash, Fish, Zsh};
 use quist::{utils, App};
 use std::env;
+use structopt::clap::Shell;
+use structopt::StructOpt;
 
 fn main() {
 	let outdir = match env::var_os("OUT_DIR") {
@@ -9,8 +9,9 @@ fn main() {
 		Some(outdir) => outdir,
 	};
 
-	let mut app = App::into_app();
-	clap_generate::generate_to::<Bash, _, _>(&mut app, utils::get_name(), &outdir);
-	clap_generate::generate_to::<Fish, _, _>(&mut app, utils::get_name(), &outdir);
-	clap_generate::generate_to::<Zsh, _, _>(&mut app, utils::get_name(), &outdir);
+	let shells = vec![Shell::Bash, Shell::Fish, Shell::Zsh];
+
+	for sh in shells {
+		App::clap().gen_completions(utils::get_name(), sh, &outdir);
+	}
 }

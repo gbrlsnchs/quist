@@ -1,12 +1,12 @@
-use app::{utils, App, Output};
-use clap::Clap;
+use quist::{utils, App, Output};
 use std::io::{self, Error as IoError, ErrorKind as IoErrorKind, Result as IoResult, Write};
+use structopt::StructOpt;
 use tokio::signal;
 use tokio::sync::mpsc::{self, Sender};
 
 #[tokio::main]
 async fn main() -> IoResult<()> {
-	let app = App::parse();
+	let app = App::from_args();
 	let mut output = Output {
 		stdout: io::stdout(),
 		stderr: io::stderr(),
