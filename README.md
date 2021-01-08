@@ -16,7 +16,7 @@ $ quist --basic-auth=gbrlsnchs:$GIST_TOKEN welcome.txt
 Gist created at https://gist.github.com/gbrlsnchs/0db1a400ee13076c1646cbca82b9b830
 Waiting for SIGINT...
 ^C
-Gist "aa5a315d61ae9438b18d" has been successfully deleted
+Gist "0db1a400ee13076c1646cbca82b9b830" has been successfully deleted
 ```
 
 Note that this is not a CLI to manage Gists, which you could do with the official GitHub CLI. This is just a simple utility tool to create short-lived Gists.
