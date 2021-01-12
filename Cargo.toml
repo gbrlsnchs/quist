@@ -1,6 +1,6 @@
 [package]
 name = "quist"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Gabriel Sanches <gabriel@gsr.dev>"]
 homepage = "https://github.com/gbrlsnchs/quist"
 edition = "2018"
