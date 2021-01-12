@@ -1,12 +1,18 @@
-use quist::{utils, App, Output};
+use crate::app::{App, Output};
+use crate::opts::Opts;
 use std::io::{self, Error as IoError, ErrorKind as IoErrorKind, Result as IoResult, Write};
 use structopt::StructOpt;
 use tokio::signal;
 use tokio::sync::mpsc::{self, Sender};
 
+mod app;
+mod opts;
+mod utils;
+
 #[tokio::main]
 async fn main() -> IoResult<()> {
-	let app = App::from_args();
+	let opts = Opts::from_args();
+	let app = App { opts };
 	let mut output = Output {
 		stdout: io::stdout(),
 		stderr: io::stderr(),

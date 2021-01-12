@@ -2,16 +2,14 @@ use self::client::auth::AuthMethod;
 use self::client::data::{FileMap, Gist};
 use self::client::response::Response;
 use self::client::Client;
+use crate::opts::Opts;
 use futures::future;
 use std::error::Error;
 use std::io::Result as IoResult;
 use std::io::Write;
-use std::path::PathBuf;
-use structopt::StructOpt;
 use tokio::sync::mpsc::Receiver;
 
 mod client;
-pub mod utils;
 
 pub struct Output<Stdout: Write, Stderr: Write> {
 	pub stdout: Stdout,
@@ -19,19 +17,9 @@ pub struct Output<Stdout: Write, Stderr: Write> {
 }
 
 /// A CLI to create short-lived Gists.
-#[derive(Debug, Default, StructOpt)]
-#[structopt(
-	name = utils::get_name(),
-	version = utils::get_version(),
-	author = env!("CARGO_PKG_AUTHORS"),
-)]
+#[derive(Debug)]
 pub struct App {
-	/// Credentials in basic access authentication format
-	#[structopt(long)]
-	basic_auth: String,
-	/// List of files to be included in the Gist
-	#[structopt(name = "FILE", required = true, parse(from_os_str))]
-	files: Vec<PathBuf>,
+	pub opts: Opts,
 }
 
 impl App {
@@ -46,7 +34,7 @@ impl App {
 			ref mut stderr,
 		} = output;
 
-		self.files.sort();
+		self.opts.files.sort();
 		let file_map: FileMap = self
 			.read_files()
 			.await?
@@ -92,11 +80,11 @@ impl App {
 	}
 
 	async fn read_files(&self) -> IoResult<Vec<(&str, Vec<u8>)>> {
-		let files: Vec<_> = self.files.iter().map(tokio::fs::read).collect();
-		let App {
+		let files: Vec<_> = self.opts.files.iter().map(tokio::fs::read).collect();
+		let Opts {
 			files: ref app_files,
 			basic_auth: _,
-		} = self;
+		} = self.opts;
 
 		let files: Vec<_> = future::try_join_all(files)
 			.await?
@@ -109,7 +97,7 @@ impl App {
 	}
 
 	fn parse_auth_method(&self) -> AuthMethod {
-		let credentials: Vec<_> = self.basic_auth.split(':').collect();
+		let credentials: Vec<_> = self.opts.basic_auth.split(':').collect();
 
 		match credentials[..] {
 			[username, token] => AuthMethod::BasicAuth { username, token },
@@ -131,6 +119,7 @@ fn get_base_url() -> String {
 #[cfg(test)]
 mod tests {
 	use super::*;
+	use crate::utils;
 	use pretty_assertions::assert_eq;
 	use serde_json::json;
 	use std::path::PathBuf;
@@ -139,8 +128,10 @@ mod tests {
 	#[tokio::test]
 	async fn test_files_are_correctly_read() -> IoResult<()> {
 		let app = App {
-			files: vec![PathBuf::from("test/foo.txt"), PathBuf::from("test/bar.txt")],
-			..App::default()
+			opts: Opts {
+				files: vec![PathBuf::from("test/foo.txt"), PathBuf::from("test/bar.txt")],
+				..Opts::default()
+			},
 		};
 
 		let files = app.read_files().await?;
@@ -159,8 +150,10 @@ mod tests {
 	#[test]
 	fn test_basic_auth_is_correctly_parsed() {
 		let app = App {
-			basic_auth: String::from("foo:bar"),
-			..App::default()
+			opts: Opts {
+				basic_auth: String::from("foo:bar"),
+				..Opts::default()
+			},
 		};
 
 		assert_eq!(
@@ -175,7 +168,9 @@ mod tests {
 	#[test]
 	#[should_panic]
 	fn test_unimplemented_auth_panic() {
-		let app = App::default();
+		let app = App {
+			opts: Opts::default(),
+		};
 
 		app.parse_auth_method();
 	}
@@ -228,8 +223,10 @@ mod tests {
 			.create();
 
 		let app = App {
-			basic_auth: String::from("username:token"),
-			files: vec![PathBuf::from("test/foo.txt"), PathBuf::from("test/bar.txt")],
+			opts: Opts {
+				basic_auth: String::from("username:token"),
+				files: vec![PathBuf::from("test/foo.txt"), PathBuf::from("test/bar.txt")],
+			},
 		};
 
 		let mut output = Output {

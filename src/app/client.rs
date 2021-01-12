@@ -1,12 +1,12 @@
-pub mod auth;
-pub mod data;
-pub mod response;
-
 use self::auth::AuthMethod;
 use self::data::Gist;
 use self::response::{GistCreated, GistDeleted, Response};
 use crate::utils;
 use reqwest::{Client as HttpClient, Error as HttpError};
+
+pub mod auth;
+pub mod data;
+pub mod response;
 
 /// Type alias to wrap a single Error from `reqwest`.
 type HttpResult<T> = Result<T, HttpError>;
