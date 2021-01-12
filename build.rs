@@ -1,7 +1,11 @@
-use quist::{utils, App};
+use self::quist::{utils, App};
 use std::env;
 use structopt::clap::Shell;
 use structopt::StructOpt;
+
+#[allow(dead_code)]
+#[path = "src/lib.rs"]
+mod quist;
 
 fn main() {
 	let outdir = match env::var_os("OUT_DIR") {

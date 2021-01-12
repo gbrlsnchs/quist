@@ -860,8 +860,9 @@ dependencies = [
 
 [[package]]
 name = "quist"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
+ "ctrlc",
  "futures",
  "maplit",
  "mockito",
@@ -869,17 +870,6 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
- "structopt",
- "tokio",
-]
-
-[[package]]
-name = "quist_cli"
-version = "0.1.0"
-dependencies = [
- "ctrlc",
- "futures",
- "quist",
  "structopt",
  "tokio",
 ]

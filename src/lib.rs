@@ -1,7 +1,7 @@
-use crate::client::auth::AuthMethod;
-use crate::client::data::{FileMap, Gist};
-use crate::client::response::Response;
-use crate::client::Client;
+use self::client::auth::AuthMethod;
+use self::client::data::{FileMap, Gist};
+use self::client::response::Response;
+use self::client::Client;
 use futures::future;
 use std::error::Error;
 use std::io::Result as IoResult;
