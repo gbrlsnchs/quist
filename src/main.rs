@@ -30,7 +30,7 @@ async fn main() -> IoResult<()> {
 	Ok(())
 }
 
-async fn handle_ctrlc(mut tx: Sender<()>) -> IoResult<()> {
+async fn handle_ctrlc(tx: Sender<()>) -> IoResult<()> {
 	signal::ctrl_c().await?;
 
 	if tx.send(()).await.is_err() {
