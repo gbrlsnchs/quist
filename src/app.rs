@@ -234,7 +234,7 @@ mod tests {
 			stderr: Vec::new(),
 		};
 
-		let (mut tx, rx) = mpsc::channel(1);
+		let (tx, rx) = mpsc::channel(1);
 		tx.try_send(()).unwrap();
 		let result = app.run(rx, &mut output).await;
 
